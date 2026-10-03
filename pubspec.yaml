@@ -1,0 +1,25 @@
+name: panchang_app
+description: "A free, offline-first, multilingual Hindu Panchang and Muhurat Flutter application."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  test: ^1.24.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/data/

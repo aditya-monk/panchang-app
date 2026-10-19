@@ -72,6 +72,22 @@ class LocalStorageService {
     updateAvailableNotifier.value = false;
   }
 
+  // User Session & Persistent Registration Storage
+  static Map<String, dynamic>? savedUserSession;
+  static List<Map<String, dynamic>>? savedRegisteredUsers;
+
+  static void saveUserSession(Map<String, dynamic> session) {
+    savedUserSession = session;
+  }
+
+  static void clearUserSession() {
+    savedUserSession = null;
+  }
+
+  static void saveRegisteredUsers(List<Map<String, dynamic>> users) {
+    savedRegisteredUsers = users;
+  }
+
   static void resetFirstTimeUser() {
     onboardingCompleteNotifier.value = false;
   }

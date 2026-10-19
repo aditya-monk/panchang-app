@@ -25,7 +25,9 @@ if %errorlevel% neq 0 (
 )
 
 echo [3/3] Deploying to Vercel Production...
-call npx vercel --prod --yes
+copy /y vercel.json build\web\vercel.json >nul 2>nul
+call npx vercel build/web --prod --yes
+call npx vercel alias set web-tau-seven-79.vercel.app panchang-app-eta.vercel.app >nul 2>nul
 if %errorlevel% neq 0 (
     echo [ERROR] Vercel deployment failed!
     exit /b %errorlevel%

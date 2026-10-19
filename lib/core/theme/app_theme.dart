@@ -7,6 +7,7 @@ class AppTheme {
   static const Color saffronPrimary = Color(0xFFD97706);
   static const Color saffronAccent = Color(0xFFF59E0B);
   static const Color deepMaroon = Color(0xFF881337);
+  static const Color maroonSecondary = Color(0xFF881337);
   static const Color sacredGreen = Color(0xFF14532D);
   static const Color deepText = Color(0xFF1C1917);
   static const Color subtleText = Color(0xFF78716C);

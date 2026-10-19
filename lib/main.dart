@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/splash/splash_screen.dart';
+import 'services/auth/auth_service.dart';
 import 'services/storage/local_storage_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  AuthService.init();
   runApp(const PanchangApp());
 }
 

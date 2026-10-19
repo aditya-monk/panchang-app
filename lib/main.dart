@@ -31,7 +31,6 @@ class _PanchangAppState extends State<PanchangApp> {
           valueListenable: LocalStorageService.elderModeNotifier,
           builder: (context, elder, _) {
             return MaterialApp(
-              key: ValueKey('panchang-$currentLang-$elder'),
               title: 'Panchang',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.lightTheme(elderMode: elder),

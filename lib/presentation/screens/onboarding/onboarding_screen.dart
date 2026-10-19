@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/user_profile.dart';
+import '../../../services/auth/auth_service.dart';
+import '../../../services/location/location_service.dart';
 import '../../../services/storage/local_storage_service.dart';
 import '../../../services/voice/tts_service.dart';
 
@@ -15,22 +19,28 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageCtrl = PageController();
-  int _currentStep = 0; // 0: Language, 1: Elder Mode, 2: Tour
+  final TextEditingController _phoneCtrl = TextEditingController(text: '+91 ');
+  int _currentStep = 0; // 0: Language, 1: Elder Mode, 2: Tour, 3: Sign In
 
   // State
   String _selectedLang = LocalStorageService.appLanguage;
   bool _elderMode = LocalStorageService.elderMode;
   int _tourIndex = 0;
   bool _isPlayingVoice = false;
+  bool _isSigningIn = false;
+  Timer? _voiceTimer;
 
   @override
   void dispose() {
+    _voiceTimer?.cancel();
     TtsService.stop();
+    _phoneCtrl.dispose();
     _pageCtrl.dispose();
     super.dispose();
   }
 
   void _goToStep(int step) {
+    _voiceTimer?.cancel();
     TtsService.stop();
     setState(() => _currentStep = step);
     _pageCtrl.animateToPage(
@@ -46,6 +56,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _finish() {
+    _voiceTimer?.cancel();
     TtsService.stop();
     LocalStorageService.appLanguage = _selectedLang;
     LocalStorageService.voiceLanguage = _selectedLang;
@@ -61,7 +72,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     TtsService.speak(text: textToSpeak, langCode: _selectedLang);
 
     // Reset indicator after a few seconds
-    Future.delayed(const Duration(seconds: 4), () {
+    _voiceTimer?.cancel();
+    _voiceTimer = Timer(const Duration(seconds: 4), () {
       if (mounted) setState(() => _isPlayingVoice = false);
     });
   }
@@ -75,14 +87,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             // Top Stepper Bar
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
-                  _buildStepIndicator(0, '1. भाषा / Language'),
-                  const SizedBox(width: 8),
-                  _buildStepIndicator(1, '2. बड़े अक्षर / Text Size'),
-                  const SizedBox(width: 8),
-                  _buildStepIndicator(2, '3. ऐप परिचय / Tour'),
+                  _buildStepIndicator(0, '1. भाषा'),
+                  const SizedBox(width: 6),
+                  _buildStepIndicator(1, '2. दृश्य'),
+                  const SizedBox(width: 6),
+                  _buildStepIndicator(2, '3. परिचय'),
+                  const SizedBox(width: 6),
+                  _buildStepIndicator(3, '4. साइन इन'),
                 ],
               ),
             ),
@@ -95,6 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _buildLanguageStep(),
                   _buildElderModeStep(),
                   _buildTourStep(),
+                  _buildSignInStep(),
                 ],
               ),
             ),
@@ -176,8 +191,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onTap: () {
                     setState(() {
                       _selectedLang = l['code']!;
-                      LocalStorageService.appLanguage = l['code']!;
-                      LocalStorageService.voiceLanguage = l['code']!;
                     });
                   },
                   borderRadius: BorderRadius.circular(16),
@@ -275,7 +288,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildElderModeStep() {
     final texts = _getElderTexts(_selectedLang);
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,7 +329,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             onTap: () {
               setState(() {
                 _elderMode = true;
-                LocalStorageService.elderMode = true;
               });
             },
             borderRadius: BorderRadius.circular(16),
@@ -369,7 +381,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             onTap: () {
               setState(() {
                 _elderMode = false;
-                LocalStorageService.elderMode = false;
               });
             },
             borderRadius: BorderRadius.circular(16),
@@ -451,7 +462,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
 
-          const Spacer(),
+          const SizedBox(height: 24),
 
           SizedBox(
             width: double.infinity,
@@ -499,7 +510,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPressed: () => _goToStep(1),
               ),
               TextButton(
-                onPressed: _finish,
+                onPressed: () => _goToStep(3),
                 child: Text(
                   _selectedLang == 'hi' ? 'छोड़ें (Skip)' : 'Skip',
                   style: const TextStyle(color: AppTheme.subtleText, fontWeight: FontWeight.w600),
@@ -645,7 +656,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   onPressed: () {
                     if (isLast) {
-                      _finish();
+                      _goToStep(3);
                     } else {
                       setState(() => _tourIndex++);
                       _playTourVoice(_tourIndex);
@@ -653,7 +664,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                   child: Text(
                     isLast
-                        ? (_selectedLang == 'hi' ? 'पंचांग शुरू करें' : 'Start Using Panchang')
+                        ? (_selectedLang == 'hi' ? 'साइन इन करें • Continue' : 'Continue to Sign In')
                         : (_selectedLang == 'hi' ? 'अगला (Next)' : 'Next'),
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
@@ -904,5 +915,285 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           },
         ];
     }
+  }
+
+  // -------------------------------------------------------------
+  // STEP 4: Sign In / Account Setup
+  // -------------------------------------------------------------
+  Future<void> _handleSignIn(Future<UserProfile> Function() authAction) async {
+    setState(() => _isSigningIn = true);
+    try {
+      final profile = await authAction();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              profile.isAdmin
+                  ? '👑 स्वागत है व्यवस्थापक (Admin)! व्यवस्थापक नियंत्रण अनलॉक हो गया।'
+                  : '✅ स्वागत है ${profile.name}! आपका खाता सफलतापूर्वक जुड़ गया।',
+            ),
+            backgroundColor: profile.isAdmin ? AppTheme.maroonSecondary : AppTheme.suitableGreen,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        _finish();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('साइन इन त्रुटि: $e'),
+            backgroundColor: AppTheme.notSuitableRed,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSigningIn = false);
+    }
+  }
+
+  Widget _buildSignInStep() {
+    final location = LocationService.currentLocation;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => _goToStep(2),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppTheme.saffronPrimary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.saffronPrimary.withOpacity(0.3)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('✨ ', style: TextStyle(fontSize: 12)),
+                    Text(
+                      'हरे कृष्ण!',
+                      style: TextStyle(
+                        color: AppTheme.saffronPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          const Text(
+            'साइन इन / खाता बनाएं\nSign In / Register',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.deepText,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'अपने दैनिक पंचांग, शुभ मुहूर्त और सूचनाएं सुरक्षित रखने के लिए खाता जोड़ें।',
+            style: TextStyle(fontSize: 13, color: AppTheme.subtleText),
+          ),
+          const SizedBox(height: 20),
+
+          // Auto-detected location badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3EBE1),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.borderSubtle),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.location_on, color: AppTheme.saffronPrimary, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'स्वतः पहचाना गया स्थान (Auto-detected)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.subtleText,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${location.name}, ${location.state} (${location.country})',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.deepText,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.check_circle, color: AppTheme.suitableGreen, size: 18),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Optional Phone Number Input
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.borderSubtle),
+            ),
+            child: TextField(
+              controller: _phoneCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                icon: Icon(Icons.phone, color: AppTheme.saffronPrimary, size: 20),
+                labelText: 'मोबाइल नंबर (वैकल्पिक / Optional)',
+                labelStyle: TextStyle(fontSize: 13, color: AppTheme.subtleText),
+                hintText: '+91 98765 43210',
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Google Sign In Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF1F1F1F),
+                elevation: 1,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: const BorderSide(color: Color(0xFFDADCE0)),
+                ),
+              ),
+              onPressed: _isSigningIn
+                  ? null
+                  : () => _handleSignIn(
+                        () => AuthService.signInWithGoogle(
+                          phoneNumber: _phoneCtrl.text.trim().length > 5
+                              ? _phoneCtrl.text.trim()
+                              : null,
+                        ),
+                      ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFF4285F4),
+                    ),
+                    child: const Text(
+                      'G',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Google से आगे बढ़ें (Continue with Google)',
+                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Apple Sign In Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: _isSigningIn
+                  ? null
+                  : () => _handleSignIn(
+                        () => AuthService.signInWithApple(
+                          phoneNumber: _phoneCtrl.text.trim().length > 5
+                              ? _phoneCtrl.text.trim()
+                              : null,
+                        ),
+                      ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.apple, color: Colors.white, size: 22),
+                  SizedBox(width: 12),
+                  Text(
+                    'Apple ID से जारी रखें (Sign in with Apple)',
+                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Stay logged in trust note
+          const Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.lock_outline, size: 14, color: AppTheme.subtleText),
+                SizedBox(width: 6),
+                Text(
+                  'आप हमेशा लॉग इन रहेंगे • सुरक्षित और स्वचालित',
+                  style: TextStyle(fontSize: 12, color: AppTheme.subtleText),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Skip to Guest option
+          Center(
+            child: TextButton(
+              onPressed: _isSigningIn ? null : _finish,
+              child: const Text(
+                'अतिथि के रूप में जारी रखें • बाद में करें (Skip & Get Started)',
+                style: TextStyle(
+                  color: AppTheme.saffronPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.5,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

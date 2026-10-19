@@ -6,6 +6,7 @@ import 'services/storage/local_storage_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  LocalStorageService.init();
   AuthService.init();
   runApp(const PanchangApp());
 }

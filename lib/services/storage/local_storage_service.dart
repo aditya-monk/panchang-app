@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/constants/panchang_constants.dart';
 import '../../domain/models/location_info.dart';
 import '../location/location_service.dart';
+import 'web_storage.dart';
 
 class LocalStorageService {
   // ValueNotifiers for dynamic reactivity across all screens
@@ -27,21 +28,69 @@ class LocalStorageService {
   // First-time onboarding flag
   static final ValueNotifier<bool> onboardingCompleteNotifier = ValueNotifier<bool>(false);
 
-  // Getters and Setters that trigger notifiers
+  /// Initialize and restore user choices from persistent storage
+  static void init() {
+    final savedLang = WebStorage.getItem('panchang_app_language');
+    if (savedLang != null && savedLang.isNotEmpty) {
+      appLanguageNotifier.value = savedLang;
+      voiceLanguageNotifier.value = savedLang;
+    }
+
+    final savedElder = WebStorage.getItem('panchang_elder_mode');
+    if (savedElder != null) {
+      elderModeNotifier.value = (savedElder == 'true');
+    }
+
+    final savedOnboarding = WebStorage.getItem('panchang_onboarding_complete');
+    if (savedOnboarding != null) {
+      onboardingCompleteNotifier.value = (savedOnboarding == 'true');
+    }
+
+    final savedTradition = WebStorage.getItem('panchang_tradition');
+    if (savedTradition != null) {
+      try {
+        traditionNotifier.value = CalendarTradition.values.firstWhere((t) => t.name == savedTradition);
+      } catch (_) {}
+    }
+
+    final savedRegion = WebStorage.getItem('panchang_region');
+    if (savedRegion != null) {
+      try {
+        regionNotifier.value = RegionalProfile.values.firstWhere((r) => r.name == savedRegion);
+      } catch (_) {}
+    }
+  }
+
+  // Getters and Setters that trigger notifiers & persist to storage
   static CalendarTradition get selectedTradition => traditionNotifier.value;
-  static set selectedTradition(CalendarTradition val) => traditionNotifier.value = val;
+  static set selectedTradition(CalendarTradition val) {
+    traditionNotifier.value = val;
+    WebStorage.setItem('panchang_tradition', val.name);
+  }
 
   static RegionalProfile get selectedRegion => regionNotifier.value;
-  static set selectedRegion(RegionalProfile val) => regionNotifier.value = val;
+  static set selectedRegion(RegionalProfile val) {
+    regionNotifier.value = val;
+    WebStorage.setItem('panchang_region', val.name);
+  }
 
   static String get appLanguage => appLanguageNotifier.value;
-  static set appLanguage(String val) => appLanguageNotifier.value = val;
+  static set appLanguage(String val) {
+    appLanguageNotifier.value = val;
+    WebStorage.setItem('panchang_app_language', val);
+  }
 
   static String get voiceLanguage => voiceLanguageNotifier.value;
-  static set voiceLanguage(String val) => voiceLanguageNotifier.value = val;
+  static set voiceLanguage(String val) {
+    voiceLanguageNotifier.value = val;
+    WebStorage.setItem('panchang_voice_language', val);
+  }
 
   static bool get elderMode => elderModeNotifier.value;
-  static set elderMode(bool val) => elderModeNotifier.value = val;
+  static set elderMode(bool val) {
+    elderModeNotifier.value = val;
+    WebStorage.setItem('panchang_elder_mode', val.toString());
+  }
 
   static LocationInfo get currentLocation => locationNotifier.value;
   static set currentLocation(LocationInfo val) {
@@ -50,7 +99,10 @@ class LocalStorageService {
   }
 
   static bool get isOnboardingComplete => onboardingCompleteNotifier.value;
-  static set isOnboardingComplete(bool val) => onboardingCompleteNotifier.value = val;
+  static set isOnboardingComplete(bool val) {
+    onboardingCompleteNotifier.value = val;
+    WebStorage.setItem('panchang_onboarding_complete', val.toString());
+  }
 
   static String get latestBroadcastVersion => latestBroadcastVersionNotifier.value;
   static String get apkDownloadUrl => apkDownloadUrlNotifier.value;
@@ -90,6 +142,7 @@ class LocalStorageService {
 
   static void resetFirstTimeUser() {
     onboardingCompleteNotifier.value = false;
+    WebStorage.removeItem('panchang_onboarding_complete');
   }
 
   // Notification toggles

@@ -35,7 +35,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // 0. User Account & Login (Google / Apple ID)
+          /*
+          // 0. User Account & Login (Google / Apple ID) - Commented out until Firebase setup
           ValueListenableBuilder<UserProfile?>(
             valueListenable: AuthService.currentUserNotifier,
             builder: (context, user, _) {
@@ -201,6 +202,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           const Divider(),
+          */
 
           // 1. Accessibility & Elder Mode (Section 43)
           _buildSectionHeader(AppLocalizations.tr('accessibility_display', lang), isElder),

@@ -66,25 +66,22 @@ void main() {
     // Verify Tour screen
     expect(find.textContaining('Tour'), findsWidgets);
 
-    // Skip tour to go directly to Step 3 (Sign In)
+    // Skip tour to directly complete onboarding and start app
     final skipBtn = find.textContaining('Skip');
     expect(skipBtn, findsOneWidget);
     await tester.tap(skipBtn);
     await tester.pumpAndSettle();
 
-    // Verify Step 3: Sign In / Register
-    expect(find.textContaining('Sign In / Register'), findsOneWidget);
-    expect(find.textContaining('Continue with Google'), findsOneWidget);
-    expect(find.textContaining('Sign in with Apple'), findsOneWidget);
-    expect(find.textContaining('Auto-detected'), findsOneWidget);
-
-    // Tap Skip to App to complete onboarding
-    final finishBtn = find.textContaining('Skip & Get Started');
-    expect(finishBtn, findsOneWidget);
-    await tester.tap(finishBtn);
-    await tester.pumpAndSettle();
-
+    // Verify completed and saved
     expect(completed, isTrue);
     expect(LocalStorageService.isOnboardingComplete, isTrue);
+    expect(LocalStorageService.appLanguage, 'gu');
+    expect(LocalStorageService.elderMode, isTrue);
+
+    // Verify persistence across app restart / re-initialization
+    LocalStorageService.init();
+    expect(LocalStorageService.isOnboardingComplete, isTrue);
+    expect(LocalStorageService.appLanguage, 'gu');
+    expect(LocalStorageService.elderMode, isTrue);
   });
 }

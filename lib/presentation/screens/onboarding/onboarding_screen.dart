@@ -85,18 +85,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Stepper Bar
+            // Top Stepper Bar (3 Steps: Language, View Mode, App Tour)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
                   _buildStepIndicator(0, '1. भाषा'),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   _buildStepIndicator(1, '2. दृश्य'),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   _buildStepIndicator(2, '3. परिचय'),
-                  const SizedBox(width: 6),
-                  _buildStepIndicator(3, '4. साइन इन'),
+                  // const SizedBox(width: 6),
+                  // _buildStepIndicator(3, '4. साइन इन'), // Commented out until Firebase setup
                 ],
               ),
             ),
@@ -109,7 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _buildLanguageStep(),
                   _buildElderModeStep(),
                   _buildTourStep(),
-                  _buildSignInStep(),
+                  // _buildSignInStep(), // Commented out until Firebase setup
                 ],
               ),
             ),
@@ -510,7 +510,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPressed: () => _goToStep(1),
               ),
               TextButton(
-                onPressed: () => _goToStep(3),
+                onPressed: _finish,
                 child: Text(
                   _selectedLang == 'hi' ? 'छोड़ें (Skip)' : 'Skip',
                   style: const TextStyle(color: AppTheme.subtleText, fontWeight: FontWeight.w600),
@@ -656,7 +656,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   onPressed: () {
                     if (isLast) {
-                      _goToStep(3);
+                      _finish();
                     } else {
                       setState(() => _tourIndex++);
                       _playTourVoice(_tourIndex);
@@ -664,7 +664,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                   child: Text(
                     isLast
-                        ? (_selectedLang == 'hi' ? 'साइन इन करें • Continue' : 'Continue to Sign In')
+                        ? (_selectedLang == 'hi' ? 'ऐप शुरू करें • Start App' : 'Start App')
                         : (_selectedLang == 'hi' ? 'अगला (Next)' : 'Next'),
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
@@ -917,8 +917,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
+  /*
   // -------------------------------------------------------------
-  // STEP 4: Sign In / Account Setup
+  // STEP 4: Sign In / Account Setup (Preserved - ready for Firebase)
   // -------------------------------------------------------------
   Future<void> _handleSignIn(Future<UserProfile> Function() authAction) async {
     setState(() => _isSigningIn = true);
@@ -1196,4 +1197,5 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
+  */
 }

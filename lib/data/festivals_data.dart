@@ -125,19 +125,20 @@ class FestivalsData {
           vaish.add('Sri Radhashtami (Fast until noon)');
         }
         if (tithiNumber == 14) f.add('Anant Chaturdashi');
+        if (tithiNumber == 30) f.add('Mahalaya / Sarva Pitru Amavasya');
         break;
       case 6: // Ashwin
-        if (tithiNumber == 1) f.add('Sharad Navratri begins');
+        if (tithiNumber == 1) f.add('Sharad Navratri begins (Ghatasthapana)');
         if (tithiNumber == 8) f.add('Durga Ashtami');
         if (tithiNumber == 9) f.add('Maha Navami');
         if (tithiNumber == 10) f.add('Vijayadashami / Dussehra');
         if (tithiNumber == 15) f.add('Sharad Purnima / Kojagiri');
         if (tithiNumber == 19) f.add('Karwa Chauth');
-        break;
-      case 7: // Kartika
         if (tithiNumber == 28) f.add('Dhanteras / Dhanvantari Jayanti');
         if (tithiNumber == 29) f.add('Naraka Chaturdashi / Choti Diwali');
         if (tithiNumber == 30) f.add('Diwali / Lakshmi Puja');
+        break;
+      case 7: // Kartika
         if (tithiNumber == 1) {
           f.add('Govardhan Puja / Annakut');
           vaish.add('Sri Govardhana Puja & Go-puja');

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/panchang_day.dart';
+import '../../l10n/app_localizations.dart';
+import '../../services/storage/local_storage_service.dart';
 
 class DayTimelineView extends StatelessWidget {
   final PanchangDay panchang;
@@ -9,8 +11,11 @@ class DayTimelineView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = LocalStorageService.appLanguage;
+    final isElder = LocalStorageService.elderMode;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isElder ? 18 : 16),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(16),
@@ -20,13 +25,13 @@ class DayTimelineView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.timeline, color: AppTheme.saffronPrimary, size: 20),
-              SizedBox(width: 8),
+            children: [
+              Icon(Icons.timeline, color: AppTheme.saffronPrimary, size: isElder ? 22 : 20),
+              const SizedBox(width: 8),
               Text(
-                'Day Timeline',
+                AppLocalizations.tr('day_timeline', lang),
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: isElder ? 18.0 : 16.0,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.deepText,
                 ),
@@ -36,42 +41,47 @@ class DayTimelineView extends StatelessWidget {
           const SizedBox(height: 16),
           _buildTimelineNode(
             time: _formatTime(panchang.astronomicalSunrise),
-            title: 'Astronomical Sunrise',
+            title: AppLocalizations.tr('astronomical_sunrise', lang),
             icon: '🌅',
             color: AppTheme.saffronPrimary,
             isPoint: true,
+            isElder: isElder,
           ),
           _buildTimelineBar(
             startTime: _formatTime(panchang.brahmaMuhuratStart),
             endTime: _formatTime(panchang.brahmaMuhuratEnd),
-            title: 'Brahma Muhurat (Early morning)',
+            title: '${AppLocalizations.tr("brahma_muhurat", lang)} ${AppLocalizations.tr("early_morning", lang)}',
             icon: '🧘',
             color: Colors.indigo,
             isAuspicious: true,
+            isElder: isElder,
           ),
           _buildTimelineBar(
             startTime: _formatTime(panchang.rahuKaalStart),
             endTime: _formatTime(panchang.rahuKaalEnd),
-            title: 'Rahu Kaal (Avoid auspicious works)',
+            title: '${AppLocalizations.tr("rahu_kaal", lang)} ${AppLocalizations.tr("avoid_auspicious", lang)}',
             icon: '🔴',
             color: AppTheme.notSuitableRed,
             isAuspicious: false,
+            isElder: isElder,
           ),
           _buildTimelineBar(
             startTime: _formatTime(panchang.abhijitMuhuratStart),
             endTime: _formatTime(panchang.abhijitMuhuratEnd),
-            title: 'Abhijit Muhurat (Auspicious midday)',
+            title: '${AppLocalizations.tr("abhijit_muhurat", lang)} ${AppLocalizations.tr("auspicious_midday", lang)}',
             icon: '🟢',
             color: AppTheme.suitableGreen,
             isAuspicious: true,
+            isElder: isElder,
           ),
           _buildTimelineNode(
             time: _formatTime(panchang.astronomicalSunset),
-            title: 'Astronomical Sunset',
+            title: AppLocalizations.tr('astronomical_sunset', lang),
             icon: '🌇',
             color: Colors.deepOrange,
             isPoint: true,
             isLast: true,
+            isElder: isElder,
           ),
         ],
       ),
@@ -85,16 +95,17 @@ class DayTimelineView extends StatelessWidget {
     required Color color,
     bool isPoint = false,
     bool isLast = false,
+    bool isElder = false,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 76,
+          width: isElder ? 84 : 76,
           child: Text(
             time,
-            style: const TextStyle(
-              fontSize: 13,
+            style: TextStyle(
+              fontSize: isElder ? 14.5 : 13.0,
               fontWeight: FontWeight.bold,
               color: AppTheme.deepText,
             ),
@@ -114,7 +125,7 @@ class DayTimelineView extends StatelessWidget {
             if (!isLast)
               Container(
                 width: 2,
-                height: 36,
+                height: isElder ? 42 : 36,
                 color: AppTheme.borderSubtle,
               ),
           ],
@@ -123,13 +134,13 @@ class DayTimelineView extends StatelessWidget {
         Expanded(
           child: Row(
             children: [
-              Text(icon, style: const TextStyle(fontSize: 16)),
+              Text(icon, style: TextStyle(fontSize: isElder ? 18 : 16)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: TextStyle(
+                    fontSize: isElder ? 15.5 : 14.0,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.deepText,
                   ),
@@ -149,27 +160,28 @@ class DayTimelineView extends StatelessWidget {
     required String icon,
     required Color color,
     required bool isAuspicious,
+    bool isElder = false,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 76,
+          width: isElder ? 84 : 76,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 startTime,
-                style: const TextStyle(
-                  fontSize: 12,
+                style: TextStyle(
+                  fontSize: isElder ? 13.5 : 12.0,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.subtleText,
                 ),
               ),
               Text(
                 endTime,
-                style: const TextStyle(
-                  fontSize: 11,
+                style: TextStyle(
+                  fontSize: isElder ? 12.5 : 11.0,
                   color: AppTheme.subtleText,
                 ),
               ),
@@ -188,7 +200,7 @@ class DayTimelineView extends StatelessWidget {
             ),
             Container(
               width: 2,
-              height: 48,
+              height: isElder ? 56 : 48,
               color: color.withOpacity(0.4),
             ),
           ],
@@ -197,7 +209,7 @@ class DayTimelineView extends StatelessWidget {
         Expanded(
           child: Container(
             margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: isElder ? 10 : 8),
             decoration: BoxDecoration(
               color: color.withOpacity(0.08),
               borderRadius: BorderRadius.circular(10),
@@ -205,13 +217,13 @@ class DayTimelineView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Text(icon, style: const TextStyle(fontSize: 14)),
+                Text(icon, style: TextStyle(fontSize: isElder ? 16 : 14)),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: isElder ? 14.5 : 13.0,
                       fontWeight: FontWeight.w600,
                       color: isAuspicious
                           ? AppTheme.suitableGreen

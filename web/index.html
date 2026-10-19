@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="panchang_app">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>panchang_app</title>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <!-- Native Web Speech API Bridge for Voice Asking -->
+  <script>
+    window.PanchangSpeechBridge = {
+      recognition: null,
+      isListening: false,
+      isSupported: function() {
+        return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+      },
+      start: function(lang, onResult, onError, onEnd) {
+        try {
+          const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+          if (!SpeechRec) {
+            if (onError) onError('Speech recognition is not supported in this browser.');
+            return false;
+          }
+          if (this.recognition) {
+            try { this.recognition.abort(); } catch(e) {}
+          }
+          const rec = new SpeechRec();
+          this.recognition = rec;
+          rec.continuous = false;
+          rec.interimResults = true;
+          
+          // Map language codes to BCP-47 locale tags
+          const langMap = {
+            'hi': 'hi-IN',
+            'gu': 'gu-IN',
+            'mr': 'mr-IN',
+            'bho': 'hi-IN',
+            'en': 'en-IN'
+          };
+          rec.lang = langMap[lang] || 'hi-IN';
+
+          rec.onstart = function() {
+            window.PanchangSpeechBridge.isListening = true;
+          };
+
+          rec.onresult = function(event) {
+            let interim = '';
+            let finalStr = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) {
+                finalStr += event.results[i][0].transcript;
+              } else {
+                interim += event.results[i][0].transcript;
+              }
+            }
+            const spokenText = finalStr || interim;
+            if (spokenText && onResult) {
+              onResult(spokenText, Boolean(finalStr));
+            }
+          };
+
+          rec.onerror = function(event) {
+            window.PanchangSpeechBridge.isListening = false;
+            if (onError) onError(event.error || 'Speech error occurred');
+          };
+
+          rec.onend = function() {
+            window.PanchangSpeechBridge.isListening = false;
+            if (onEnd) onEnd();
+          };
+
+          rec.start();
+          return true;
+        } catch (err) {
+          window.PanchangSpeechBridge.isListening = false;
+          if (onError) onError(err.message || 'Could not start speech recognition');
+          return false;
+        }
+      },
+      stop: function() {
+        if (this.recognition) {
+          try {
+            this.recognition.stop();
+          } catch(e) {}
+        }
+        this.isListening = false;
+      }
+    };
+
+    // Native Web Speech Synthesis (TTS) Bridge for Tour & Voice Reading
+    window.PanchangTtsBridge = {
+      isSupported: function() {
+        return ('speechSynthesis' in window) && (typeof SpeechSynthesisUtterance !== 'undefined');
+      },
+      speak: function(text, lang) {
+        try {
+          if (!this.isSupported()) return false;
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          const langMap = {
+            'hi': 'hi-IN',
+            'gu': 'gu-IN',
+            'mr': 'mr-IN',
+            'bho': 'hi-IN',
+            'en': 'en-IN'
+          };
+          utterance.lang = langMap[lang] || 'hi-IN';
+          utterance.rate = 0.95;
+          utterance.pitch = 1.0;
+          window.speechSynthesis.speak(utterance);
+          return true;
+        } catch (e) {
+          return false;
+        }
+      },
+      stop: function() {
+        try {
+          if (this.isSupported()) {
+            window.speechSynthesis.cancel();
+          }
+        } catch (e) {}
+      }
+    };
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

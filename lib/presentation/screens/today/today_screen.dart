@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/panchang_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/models/location_info.dart';
 import '../../../domain/models/panchang_day.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../services/ekadashi/ekadashi_service.dart';
 import '../../../services/location/location_service.dart';
 import '../../../services/panchang/panchang_service.dart';
 import '../../../services/storage/local_storage_service.dart';
 import '../../widgets/now_indicator_card.dart';
 import '../../widgets/timeline_view.dart';
+import '../settings/settings_screen.dart';
 import 'full_panchang_screen.dart';
 
 class TodayScreen extends StatefulWidget {
@@ -124,6 +125,8 @@ class _TodayScreenState extends State<TodayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = LocalStorageService.appLanguage;
+    final isElder = LocalStorageService.elderMode;
     final nextEkadashi = EkadashiService.getNextEkadashi(
       fromDate: _selectedDate,
       location: _location,
@@ -132,14 +135,20 @@ class _TodayScreenState extends State<TodayScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🪔 Panchang'),
+        title: Text(
+          '🪔 ${AppLocalizations.tr('app_title', lang)}',
+          style: TextStyle(
+            fontSize: isElder ? 20 : 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           InkWell(
             onTap: _showCitySearchDialog,
             borderRadius: BorderRadius.circular(20),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              margin: const EdgeInsets.only(right: 16),
+              margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
                 color: AppTheme.saffronPrimary.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(20),
@@ -151,16 +160,32 @@ class _TodayScreenState extends State<TodayScreen> {
                   const SizedBox(width: 4),
                   Text(
                     _location.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppTheme.saffronPrimary,
                       fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                      fontSize: isElder ? 14.5 : 13.0,
                     ),
                   ),
                 ],
               ),
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: AppLocalizations.tr('settings', lang),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ).then((_) {
+                setState(() {
+                  _location = LocationService.currentLocation;
+                  _recalculate();
+                });
+              });
+            },
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: ListView(
@@ -168,9 +193,9 @@ class _TodayScreenState extends State<TodayScreen> {
         children: [
           // Header Date
           Text(
-            '${_panchang.vara} · ${_selectedDate.day} ${_monthName(_selectedDate.month)} ${_selectedDate.year}',
-            style: const TextStyle(
-              fontSize: 16,
+            '${AppLocalizations.getVaraName(_selectedDate.weekday, lang)} · ${_selectedDate.day} ${AppLocalizations.getMonthName(_selectedDate.month, lang)} ${_selectedDate.year}',
+            style: TextStyle(
+              fontSize: isElder ? 18.0 : 16.0,
               fontWeight: FontWeight.w600,
               color: AppTheme.subtleText,
             ),
@@ -185,7 +210,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
           // Main Hero Panchang Card
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(isElder ? 22 : 18),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
@@ -209,23 +234,23 @@ class _TodayScreenState extends State<TodayScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${_panchang.lunarMonthName} ${_panchang.paksha == Paksha.shukla ? "Shukla" : "Krishna"}',
-                      style: const TextStyle(
-                        fontSize: 16,
+                      '${AppLocalizations.getLunarMonthName(_panchang.lunarMonthName, lang)} ${AppLocalizations.getPakshaName(_panchang.paksha, lang)}',
+                      style: TextStyle(
+                        fontSize: isElder ? 18.5 : 16.0,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.deepMaroon,
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: AppTheme.deepMaroon.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        _panchang.vara,
-                        style: const TextStyle(
-                          fontSize: 12,
+                        AppLocalizations.getVaraName(_selectedDate.weekday, lang),
+                        style: TextStyle(
+                          fontSize: isElder ? 14.0 : 12.5,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.deepMaroon,
                         ),
@@ -233,18 +258,24 @@ class _TodayScreenState extends State<TodayScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
-                  _panchang.tithiName,
-                  style: const TextStyle(
-                    fontSize: 28,
+                  AppLocalizations.getTithiName(_panchang.tithiNumber, lang),
+                  style: TextStyle(
+                    fontSize: isElder ? 32 : 27,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.deepText,
+                    height: 1.2,
                   ),
                 ),
+                const SizedBox(height: 6),
                 Text(
-                  'Nakshatra: ${_panchang.nakshatraName} | Yoga: ${_panchang.yogaName}',
-                  style: const TextStyle(fontSize: 14, color: AppTheme.deepText),
+                  '${AppLocalizations.tr("nakshatra_label", lang)}: ${AppLocalizations.getNakshatraName(_panchang.nakshatraName, lang)} | ${AppLocalizations.tr("yoga_label", lang)}: ${AppLocalizations.getYogaName(_panchang.yogaName, lang)}',
+                  style: TextStyle(
+                    fontSize: isElder ? 15.5 : 14.0,
+                    color: AppTheme.deepText,
+                    height: 1.3,
+                  ),
                 ),
                 const Divider(height: 24),
 
@@ -254,14 +285,16 @@ class _TodayScreenState extends State<TodayScreen> {
                   children: [
                     _buildSunStat(
                       icon: '🌅',
-                      title: 'Sunrise',
+                      title: AppLocalizations.tr('astronomical_sunrise', lang),
                       time: _formatTime(_panchang.astronomicalSunrise),
+                      isElder: isElder,
                     ),
-                    Container(width: 1, height: 36, color: AppTheme.borderSubtle),
+                    Container(width: 1, height: 40, color: AppTheme.borderSubtle),
                     _buildSunStat(
                       icon: '🌇',
-                      title: 'Sunset',
+                      title: AppLocalizations.tr('astronomical_sunset', lang),
                       time: _formatTime(_panchang.astronomicalSunset),
+                      isElder: isElder,
                     ),
                   ],
                 ),
@@ -272,15 +305,17 @@ class _TodayScreenState extends State<TodayScreen> {
 
           // Important Times Card
           Card(
+            elevation: 1.5,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isElder ? 18 : 15),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'IMPORTANT TIMES',
+                  Text(
+                    AppLocalizations.tr('popular_occasions', lang).toUpperCase(),
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: isElder ? 14.5 : 13.0,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.8,
                       color: AppTheme.subtleText,
@@ -288,33 +323,45 @@ class _TodayScreenState extends State<TodayScreen> {
                   ),
                   const SizedBox(height: 12),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildTimeBadge(
-                        'Rahu Kaal 🔴',
-                        '${_formatTime(_panchang.rahuKaalStart)} – ${_formatTime(_panchang.rahuKaalEnd)}',
-                        AppTheme.notSuitableRed,
+                      Expanded(
+                        child: _buildTimeBadge(
+                          '${AppLocalizations.tr('rahu_kaal', lang)} 🔴',
+                          '${_formatTime(_panchang.rahuKaalStart)} – ${_formatTime(_panchang.rahuKaalEnd)}',
+                          AppTheme.notSuitableRed,
+                          isElder,
+                        ),
                       ),
-                      _buildTimeBadge(
-                        'Abhijit 🟢',
-                        '${_formatTime(_panchang.abhijitMuhuratStart)} – ${_formatTime(_panchang.abhijitMuhuratEnd)}',
-                        AppTheme.suitableGreen,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildTimeBadge(
+                          '${AppLocalizations.tr('abhijit_muhurat', lang)} 🟢',
+                          '${_formatTime(_panchang.abhijitMuhuratStart)} – ${_formatTime(_panchang.abhijitMuhuratEnd)}',
+                          AppTheme.suitableGreen,
+                          isElder,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildTimeBadge(
-                        'Yamaganda',
-                        '${_formatTime(_panchang.yamagandaStart)} – ${_formatTime(_panchang.yamagandaEnd)}',
-                        AppTheme.deepText,
+                      Expanded(
+                        child: _buildTimeBadge(
+                          AppLocalizations.tr('yamaganda', lang),
+                          '${_formatTime(_panchang.yamagandaStart)} – ${_formatTime(_panchang.yamagandaEnd)}',
+                          AppTheme.deepText,
+                          isElder,
+                        ),
                       ),
-                      _buildTimeBadge(
-                        'Brahma Muhurat',
-                        '${_formatTime(_panchang.brahmaMuhuratStart)} – ${_formatTime(_panchang.brahmaMuhuratEnd)}',
-                        Colors.indigo,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildTimeBadge(
+                          AppLocalizations.tr('brahma_muhurat', lang),
+                          '${_formatTime(_panchang.brahmaMuhuratStart)} – ${_formatTime(_panchang.brahmaMuhuratEnd)}',
+                          Colors.indigo,
+                          isElder,
+                        ),
                       ),
                     ],
                   ),
@@ -332,7 +379,7 @@ class _TodayScreenState extends State<TodayScreen> {
               side: const BorderSide(color: Color(0xFFBBF7D0)),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(isElder ? 18 : 15),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -341,12 +388,12 @@ class _TodayScreenState extends State<TodayScreen> {
                     children: [
                       Row(
                         children: [
-                          const Text('🌙', style: TextStyle(fontSize: 20)),
+                          const Text('🌙', style: TextStyle(fontSize: 22)),
                           const SizedBox(width: 8),
                           Text(
-                            nextEkadashi.name,
-                            style: const TextStyle(
-                              fontSize: 16,
+                            AppLocalizations.localizeFestivalName(nextEkadashi.name, lang),
+                            style: TextStyle(
+                              fontSize: isElder ? 18.0 : 16.0,
                               fontWeight: FontWeight.bold,
                               color: AppTheme.sacredGreen,
                             ),
@@ -355,23 +402,31 @@ class _TodayScreenState extends State<TodayScreen> {
                       ),
                       Text(
                         nextEkadashi.formattedDate,
-                        style: const TextStyle(
-                          fontSize: 14,
+                        style: TextStyle(
+                          fontSize: isElder ? 15.5 : 14.0,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.sacredGreen,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
-                    'Parana: ${nextEkadashi.formattedParana}',
-                    style: const TextStyle(fontSize: 13, color: AppTheme.deepText),
+                    '${AppLocalizations.tr("parana_label", lang)}: ${nextEkadashi.formattedParana}',
+                    style: TextStyle(
+                      fontSize: isElder ? 15.0 : 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.deepText,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    nextEkadashi.fastingRule,
-                    style: const TextStyle(fontSize: 12, color: AppTheme.subtleText),
+                    AppLocalizations.localizeFastingRule(nextEkadashi.fastingRule, lang),
+                    style: TextStyle(
+                      fontSize: isElder ? 13.5 : 12.0,
+                      color: AppTheme.subtleText,
+                      height: 1.3,
+                    ),
                   ),
                 ],
               ),
@@ -390,13 +445,16 @@ class _TodayScreenState extends State<TodayScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.saffronPrimary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: EdgeInsets.symmetric(vertical: isElder ? 16 : 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               icon: const Icon(Icons.menu_book),
-              label: const Text(
-                'View Full Panchang Details',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              label: Text(
+                AppLocalizations.tr('view_full_panchang', lang),
+                style: TextStyle(
+                  fontSize: isElder ? 17 : 15.5,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               onPressed: () {
                 Navigator.push(
@@ -418,32 +476,40 @@ class _TodayScreenState extends State<TodayScreen> {
     required String icon,
     required String title,
     required String time,
+    bool isElder = false,
   }) {
     return Column(
       children: [
         Row(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 18)),
+            Text(icon, style: TextStyle(fontSize: isElder ? 20 : 18)),
             const SizedBox(width: 6),
             Text(
               title,
-              style: const TextStyle(fontSize: 13, color: AppTheme.subtleText),
+              style: TextStyle(
+                fontSize: isElder ? 14.5 : 13.0,
+                color: AppTheme.subtleText,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 4),
         Text(
           time,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.deepText),
+          style: TextStyle(
+            fontSize: isElder ? 20 : 17.5,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.deepText,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildTimeBadge(String title, String time, Color color) {
+  Widget _buildTimeBadge(String title, String time, Color color, [bool isElder = false]) {
     return Container(
-      width: (MediaQuery.of(context).size.width - 64) / 2,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: isElder ? 9 : 8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(8),
@@ -451,20 +517,26 @@ class _TodayScreenState extends State<TodayScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
-          const SizedBox(height: 2),
-          Text(time, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.deepText)),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: isElder ? 13.5 : 12.0,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            time,
+            style: TextStyle(
+              fontSize: isElder ? 13.0 : 11.5,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.deepText,
+            ),
+          ),
         ],
       ),
     );
-  }
-
-  static String _monthName(int month) {
-    const m = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return m[month - 1];
   }
 
   static String _formatTime(DateTime dt) {

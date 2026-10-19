@@ -5,11 +5,13 @@ import '../../../data/cities.dart';
 import '../../../data/muhurat_rules.dart';
 import '../../../domain/models/location_info.dart';
 import '../../../domain/models/muhurat_window.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../services/location/location_service.dart';
 import '../../../services/muhurat/muhurat_service.dart';
 import '../../../services/nlp/nlp_query_parser.dart';
 import '../../../services/notifications/notification_service.dart';
 import '../../../services/storage/local_storage_service.dart';
+import '../settings/settings_screen.dart';
 
 class MuhuratScreen extends StatefulWidget {
   const MuhuratScreen({super.key});
@@ -145,6 +147,9 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
   }
 
   void _showWindowDetail(MuhuratWindow window) {
+    final lang = LocalStorageService.appLanguage;
+    final isElder = LocalStorageService.elderMode;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -158,8 +163,8 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '${window.occasionTitle} Muhurat',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                '${window.occasionTitle} ${AppLocalizations.tr("muhurat", lang)}',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: isElder ? 20 : 18),
               ),
             ),
           ],
@@ -170,20 +175,32 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
             children: [
               Text(
                 '${window.formattedDate} · ${window.formattedTiming}',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.deepMaroon),
+                style: TextStyle(
+                  fontSize: isElder ? 17 : 15,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.deepMaroon,
+                ),
               ),
+              const SizedBox(height: 4),
               Text(
-                '📍 Event Location: ${window.location.displayName}',
-                style: const TextStyle(fontSize: 13, color: AppTheme.subtleText),
+                '📍 ${AppLocalizations.tr("event_location", lang)}: ${window.location.displayName}',
+                style: TextStyle(fontSize: isElder ? 14.5 : 13, color: AppTheme.subtleText),
               ),
               const Divider(height: 20),
 
-              const Text(
-                'Why this window?',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.deepText),
+              Text(
+                AppLocalizations.tr('why_this_window', lang),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: isElder ? 16.5 : 15,
+                  color: AppTheme.deepText,
+                ),
               ),
               const SizedBox(height: 6),
-              Text(window.simpleExplanation, style: const TextStyle(fontSize: 13)),
+              Text(
+                window.simpleExplanation,
+                style: TextStyle(fontSize: isElder ? 14.5 : 13),
+              ),
               const SizedBox(height: 12),
 
               ...window.conditionsSatisfied.map((c) => Padding(
@@ -192,15 +209,19 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('✓ ', style: TextStyle(color: AppTheme.suitableGreen, fontWeight: FontWeight.bold)),
-                        Expanded(child: Text(c, style: const TextStyle(fontSize: 12))),
+                        Expanded(child: Text(c, style: TextStyle(fontSize: isElder ? 13.5 : 12))),
                       ],
                     ),
                   )),
 
               const Divider(height: 20),
-              const Text(
-                'Calculation Breakdown',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.deepMaroon),
+              Text(
+                AppLocalizations.tr('calculation_breakdown', lang),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: isElder ? 16 : 14,
+                  color: AppTheme.deepMaroon,
+                ),
               ),
               const SizedBox(height: 6),
               ...window.detailedExplanation.entries.map((entry) => Padding(
@@ -209,16 +230,20 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(
-                          width: 130,
+                          width: isElder ? 145 : 130,
                           child: Text(
                             entry.key,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.subtleText),
+                            style: TextStyle(
+                              fontSize: isElder ? 12.5 : 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.subtleText,
+                            ),
                           ),
                         ),
                         Expanded(
                           child: Text(
                             entry.value,
-                            style: const TextStyle(fontSize: 11, color: AppTheme.deepText),
+                            style: TextStyle(fontSize: isElder ? 12.5 : 11, color: AppTheme.deepText),
                           ),
                         ),
                       ],
@@ -230,7 +255,10 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
         actions: [
           TextButton.icon(
             icon: const Icon(Icons.alarm_add, size: 18),
-            label: const Text('Add Reminder'),
+            label: Text(
+              AppLocalizations.tr('add_reminder', lang),
+              style: TextStyle(fontSize: isElder ? 15 : 13.5),
+            ),
             onPressed: () {
               NotificationService.scheduleMuhuratReminder(
                 occasionTitle: window.occasionTitle,
@@ -248,7 +276,10 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Close'),
+            child: Text(
+              AppLocalizations.tr('close', lang),
+              style: TextStyle(fontSize: isElder ? 15 : 13.5),
+            ),
           ),
         ],
       ),
@@ -257,16 +288,22 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = LocalStorageService.appLanguage;
+    final isElder = LocalStorageService.elderMode;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🪔 Muhurat Finder'),
+        title: Text(
+          '🪔 ${AppLocalizations.tr('tab_muhurat', lang)}',
+          style: TextStyle(fontSize: isElder ? 20 : 18, fontWeight: FontWeight.bold),
+        ),
         actions: [
           InkWell(
             onTap: _showLocationPicker,
             borderRadius: BorderRadius.circular(16),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              margin: const EdgeInsets.only(right: 16),
+              margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
                 color: AppTheme.saffronPrimary.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(16),
@@ -278,12 +315,32 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
                   const SizedBox(width: 4),
                   Text(
                     _eventLocation.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.saffronPrimary),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: isElder ? 14.5 : 13.0,
+                      color: AppTheme.saffronPrimary,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: AppLocalizations.tr('settings', lang),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ).then((_) {
+                setState(() {
+                  _eventLocation = LocationService.activeMuhuratLocation;
+                  _runSearch();
+                });
+              });
+            },
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: ListView(
@@ -291,7 +348,7 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
         children: [
           // Natural Language Search Card (Section 24)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isElder ? 18 : 16),
             decoration: BoxDecoration(
               color: AppTheme.cardBackground,
               borderRadius: BorderRadius.circular(16),
@@ -307,13 +364,18 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'When do you need a Muhurat?',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppTheme.deepText),
+                Text(
+                  AppLocalizations.tr('when_need_muhurat', lang),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: isElder ? 17.0 : 15.0,
+                    color: AppTheme.deepText,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _queryCtrl,
+                  style: TextStyle(fontSize: isElder ? 16 : 14),
                   decoration: InputDecoration(
                     hintText: '"Griha Pravesh in Ahmedabad next month"',
                     suffixIcon: IconButton(
@@ -346,7 +408,7 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
 
           // Event Location Confirmation Banner (Section 27 & 45)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 14, vertical: isElder ? 10 : 8),
             decoration: BoxDecoration(
               color: AppTheme.saffronPrimary.withOpacity(0.08),
               borderRadius: BorderRadius.circular(10),
@@ -357,13 +419,20 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '📍 Event location: ${_eventLocation.displayName}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.deepMaroon),
+                    '📍 ${AppLocalizations.tr('event_location', lang)}: ${_eventLocation.displayName}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: isElder ? 14.5 : 13.0,
+                      color: AppTheme.deepMaroon,
+                    ),
                   ),
                 ),
                 TextButton(
                   onPressed: _showLocationPicker,
-                  child: const Text('Change', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    AppLocalizations.tr('change_city', lang),
+                    style: TextStyle(fontSize: isElder ? 14 : 12, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -371,9 +440,13 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
           const SizedBox(height: 16),
 
           // Popular Occasions (Section 23 & 51)
-          const Text(
-            'Popular Occasions',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.deepText),
+          Text(
+            AppLocalizations.tr('popular_occasions', lang),
+            style: TextStyle(
+              fontSize: isElder ? 18.5 : 16.0,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.deepText,
+            ),
           ),
           const SizedBox(height: 10),
           SingleChildScrollView(
@@ -384,7 +457,10 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
-                    label: Text('${rule.icon} ${rule.title}'),
+                    label: Text(
+                      '${rule.icon} ${rule.title}',
+                      style: TextStyle(fontSize: isElder ? 15 : 13.5),
+                    ),
                     selected: isSelected,
                     selectedColor: AppTheme.saffronPrimary,
                     labelStyle: TextStyle(
@@ -411,11 +487,18 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
                   children: [
                     Text(
                       '${_currentResult!.occasionTitle} Windows',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.deepText),
+                      style: TextStyle(
+                        fontSize: isElder ? 20 : 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.deepText,
+                      ),
                     ),
                     Text(
                       '${_currentResult!.windows.length} suitable windows found',
-                      style: const TextStyle(fontSize: 13, color: AppTheme.subtleText),
+                      style: TextStyle(
+                        fontSize: isElder ? 14.5 : 13.0,
+                        color: AppTheme.subtleText,
+                      ),
                     ),
                   ],
                 ),
@@ -435,19 +518,26 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'No suitable Muhurat found',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.notSuitableRed),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: isElder ? 18 : 16,
+                        color: AppTheme.notSuitableRed,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'We couldn\'t find a matching window in ${_eventLocation.name} during this period.',
-                      style: const TextStyle(fontSize: 13),
+                      style: TextStyle(fontSize: isElder ? 14.5 : 13),
                     ),
                     const SizedBox(height: 12),
-                    const Text('Suggestions to find a window:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    Text(
+                      'Suggestions to find a window:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: isElder ? 14 : 12),
+                    ),
                     const SizedBox(height: 4),
-                    ..._currentResult!.suggestionsIfEmpty.map((s) => Text('• $s', style: const TextStyle(fontSize: 12))),
+                    ..._currentResult!.suggestionsIfEmpty.map((s) => Text('• $s', style: TextStyle(fontSize: isElder ? 13.5 : 12))),
                   ],
                 ),
               ),
@@ -460,7 +550,7 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
                     onTap: () => _showWindowDetail(w),
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(isElder ? 18 : 16),
                       child: Row(
                         children: [
                           Container(
@@ -473,7 +563,7 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
                             ),
                             child: Text(
                               w.status == MuhuratStatus.suitable ? '🟢' : '🟡',
-                              style: const TextStyle(fontSize: 18),
+                              style: TextStyle(fontSize: isElder ? 22 : 18),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -483,13 +573,16 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
                               children: [
                                 Text(
                                   w.formattedDate,
-                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: isElder ? 17 : 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   w.formattedTiming,
-                                  style: const TextStyle(
-                                    fontSize: 14,
+                                  style: TextStyle(
+                                    fontSize: isElder ? 16 : 14,
                                     fontWeight: FontWeight.w600,
                                     color: AppTheme.deepMaroon,
                                   ),
@@ -497,7 +590,10 @@ class _MuhuratScreenState extends State<MuhuratScreen> {
                                 const SizedBox(height: 2),
                                 Text(
                                   'Duration: ${w.duration.inMinutes} mins',
-                                  style: const TextStyle(fontSize: 12, color: AppTheme.subtleText),
+                                  style: TextStyle(
+                                    fontSize: isElder ? 13.5 : 12,
+                                    color: AppTheme.subtleText,
+                                  ),
                                 ),
                               ],
                             ),

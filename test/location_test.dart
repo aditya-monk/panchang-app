@@ -1,5 +1,4 @@
 import '../lib/data/cities.dart';
-import '../lib/domain/models/location_info.dart';
 import '../lib/services/location/location_service.dart';
 
 void main() {

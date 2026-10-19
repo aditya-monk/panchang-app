@@ -1,7 +1,6 @@
 import '../../core/constants/panchang_constants.dart';
 import '../../domain/models/ekadashi_info.dart';
 import '../../domain/models/location_info.dart';
-import '../astronomy/astronomy_engine.dart';
 import '../panchang/panchang_service.dart';
 
 class EkadashiService {

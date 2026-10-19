@@ -28,9 +28,8 @@ class AppTheme {
         primary: saffronPrimary,
         secondary: deepMaroon,
         surface: cardBackground,
-        background: ivoryBackground,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cardBackground,
         elevation: 1.5,
         shadowColor: Colors.black.withOpacity(0.06),
@@ -78,6 +77,23 @@ class AppTheme {
           fontSize: 13 * textScale,
           fontWeight: FontWeight.w400,
         ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        labelTextStyle: MaterialStateProperty.resolveWith((states) {
+          final isSelected = states.contains(MaterialState.selected);
+          return TextStyle(
+            fontSize: (isSelected ? 13.5 : 12.5) * textScale,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected ? saffronPrimary : deepText,
+          );
+        }),
+        iconTheme: MaterialStateProperty.resolveWith((states) {
+          final isSelected = states.contains(MaterialState.selected);
+          return IconThemeData(
+            size: (isSelected ? 26.0 : 24.0) * textScale,
+            color: isSelected ? saffronPrimary : deepText,
+          );
+        }),
       ),
     );
   }

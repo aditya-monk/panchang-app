@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
-import 'presentation/screens/home_screen.dart';
-import 'presentation/screens/onboarding/onboarding_flow.dart';
+import 'presentation/screens/splash/splash_screen.dart';
 import 'services/storage/local_storage_service.dart';
 
 void main() {
@@ -17,31 +16,28 @@ class PanchangApp extends StatefulWidget {
 }
 
 class _PanchangAppState extends State<PanchangApp> {
-  bool _elderMode = LocalStorageService.elderMode;
-  bool _isOnboarding = !LocalStorageService.isOnboardingComplete;
-
   void _refreshTheme() {
-    setState(() {
-      _elderMode = LocalStorageService.elderMode;
-    });
-  }
-
-  void _completeOnboarding() {
-    setState(() {
-      _isOnboarding = false;
-      LocalStorageService.isOnboardingComplete = true;
-    });
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Panchang',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme(elderMode: _elderMode),
-      home: _isOnboarding
-          ? OnboardingFlow(onComplete: _completeOnboarding)
-          : HomeScreen(onRefreshTheme: _refreshTheme),
+    return ValueListenableBuilder<String>(
+      valueListenable: LocalStorageService.appLanguageNotifier,
+      builder: (context, currentLang, _) {
+        return ValueListenableBuilder<bool>(
+          valueListenable: LocalStorageService.elderModeNotifier,
+          builder: (context, elder, _) {
+            return MaterialApp(
+              key: ValueKey('panchang-$currentLang-$elder'),
+              title: 'Panchang',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme(elderMode: elder),
+              home: SplashScreen(onRefreshTheme: _refreshTheme),
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/panchang_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/models/panchang_day.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../services/storage/local_storage_service.dart';
+import '../settings/settings_screen.dart';
 
 class FullPanchangScreen extends StatefulWidget {
   final PanchangDay panchang;
@@ -18,16 +20,26 @@ class _FullPanchangScreenState extends State<FullPanchangScreen> {
   @override
   Widget build(BuildContext context) {
     final p = widget.panchang;
+    final lang = LocalStorageService.appLanguage;
+    final isElder = LocalStorageService.elderMode;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Complete Panchang'),
+        title: Text(
+          AppLocalizations.tr('view_full_panchang', lang),
+          style: TextStyle(fontSize: isElder ? 20 : 18, fontWeight: FontWeight.bold),
+        ),
         actions: [
           Row(
             children: [
               Text(
-                _isDetailedView ? 'Detailed' : 'Simple',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                _isDetailedView
+                    ? AppLocalizations.tr('detailed_view', lang)
+                    : AppLocalizations.tr('simple_view', lang),
+                style: TextStyle(
+                  fontSize: isElder ? 14 : 12.5,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Switch(
                 value: _isDetailedView,
@@ -38,141 +50,257 @@ class _FullPanchangScreenState extends State<FullPanchangScreen> {
               ),
             ],
           ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: AppLocalizations.tr('settings', lang),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ).then((_) => setState(() {}));
+            },
+          ),
+          const SizedBox(width: 8),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Header info
-          Container(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 880),
+          child: ListView(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppTheme.saffronPrimary.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.saffronPrimary.withOpacity(0.3)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '📍 ${p.location.displayName}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    Text(
-                      '${p.localDate.day}/${p.localDate.month}/${p.localDate.year}',
-                      style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.deepMaroon),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${p.lunarMonthName} Mas · ${p.paksha == Paksha.shukla ? "Shukla Paksha" : "Krishna Paksha"} · ${p.vara}',
-                  style: const TextStyle(fontSize: 14, color: AppTheme.subtleText),
-                ),
-                if (_isDetailedView) ...[
-                  const Divider(height: 16),
-                  Text(
-                    'Tradition: ${p.tradition.name} | Month System: ${p.monthSystem.name.toUpperCase()}',
-                    style: const TextStyle(fontSize: 12, color: AppTheme.subtleText),
-                  ),
-                  Text(
-                    'Coordinates: ${p.location.coordinatesString} | TZ: +${p.location.timezoneHours}h',
-                    style: const TextStyle(fontSize: 12, color: AppTheme.subtleText),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 5 Limbs (Pancha-Anga)
-          _buildSectionTitle('Panchang Elements (पञ्चाङ्ग)'),
-          _buildPanchangRow('Tithi (तिथि)', '${p.paksha == Paksha.shukla ? "Shukla" : "Krishna"} ${p.tithiName}',
-              'Ends: ${_formatTime(p.tithiEndTime)} (Next: ${p.nextTithiName})'),
-          _buildPanchangRow('Nakshatra (नक्षत्र)', p.nakshatraName,
-              'Ends: ${_formatTime(p.nakshatraEndTime)} (Pada calculations active)'),
-          _buildPanchangRow('Yoga (योग)', p.yogaName, 'Ends: ${_formatTime(p.yogaEndTime)}'),
-          _buildPanchangRow('Karana (करण)', p.karanaName, 'Next: ${p.nextKaranaName}'),
-          _buildPanchangRow('Vara (वार)', p.vara, 'Solar weekday from sunrise'),
-          const SizedBox(height: 16),
-
-          // Astronomical Timings
-          _buildSectionTitle('Astronomical Timings (खगोलीय समय)'),
-          _buildPanchangRow('Astronomical Sunrise', _formatTime(p.astronomicalSunrise), 'Refraction & dip corrected (50\' depression)'),
-          _buildPanchangRow('Astronomical Sunset', _formatTime(p.astronomicalSunset), 'Center of Sun crosses apparent horizon'),
-          _buildPanchangRow('Moonrise', p.moonrise != null ? _formatTime(p.moonrise!) : 'No rise today', 'Topocentric parallax corrected'),
-          _buildPanchangRow('Moonset', p.moonset != null ? _formatTime(p.moonset!) : 'No set today', 'Local horizon crossing'),
-          _buildPanchangRow('Solar Noon', _formatTime(p.solarNoon), 'Madhyahna / Meridian transit'),
-          const SizedBox(height: 16),
-
-          // Auspicious & Inauspicious Periods
-          _buildSectionTitle('Auspicious & Inauspicious Periods'),
-          _buildPanchangRow('Brahma Muhurat 🧘', '${_formatTime(p.brahmaMuhuratStart)} – ${_formatTime(p.brahmaMuhuratEnd)}', '96 min to 48 min before sunrise'),
-          _buildPanchangRow('Abhijit Muhurat 🟢', '${_formatTime(p.abhijitMuhuratStart)} – ${_formatTime(p.abhijitMuhuratEnd)}', 'Midday auspicious window'),
-          _buildPanchangRow('Rahu Kaal 🔴', '${_formatTime(p.rahuKaalStart)} – ${_formatTime(p.rahuKaalEnd)}', 'Inauspicious daytime octant'),
-          _buildPanchangRow('Yamaganda', '${_formatTime(p.yamagandaStart)} – ${_formatTime(p.yamagandaEnd)}', 'Inauspicious daytime octant'),
-          _buildPanchangRow('Gulika Kaal', '${_formatTime(p.gulikaStart)} – ${_formatTime(p.gulikaEnd)}', 'Saturnian daytime octant'),
-          const SizedBox(height: 16),
-
-          // Choghadiya Section
-          _buildSectionTitle('Day Choghadiya (दिन का चौघड़िया)'),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: p.dayChoghadiya.map((c) {
-              final color = c.isAuspicious ? AppTheme.suitableGreen : AppTheme.notSuitableRed;
-              return Container(
-                width: (MediaQuery.of(context).size.width - 48) / 2,
-                padding: const EdgeInsets.all(10),
+            children: [
+              // Header info
+              Container(
+                padding: EdgeInsets.all(isElder ? 18 : 15),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: color.withOpacity(0.3)),
+                  color: AppTheme.saffronPrimary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.saffronPrimary.withOpacity(0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      c.name,
-                      style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '📍 ${p.location.displayName}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: isElder ? 18 : 16,
+                          ),
+                        ),
+                        Text(
+                          '${p.localDate.day}/${p.localDate.month}/${p.localDate.year}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: isElder ? 16 : 14,
+                            color: AppTheme.deepMaroon,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
-                      '${_formatTime(c.start)} – ${_formatTime(c.end)}',
-                      style: const TextStyle(fontSize: 12, color: AppTheme.deepText),
+                      '${AppLocalizations.getLunarMonthName(p.lunarMonthName, lang)} · ${AppLocalizations.getPakshaName(p.paksha, lang)} · ${AppLocalizations.getVaraName(p.localDate.weekday, lang)}',
+                      style: TextStyle(
+                        fontSize: isElder ? 16 : 14,
+                        color: AppTheme.subtleText,
+                      ),
                     ),
-                    Text(
-                      c.isAuspicious ? 'Auspicious' : 'Inauspicious',
-                      style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
-                    ),
+                    if (_isDetailedView) ...[
+                      const Divider(height: 16),
+                      Text(
+                        'Tradition: ${AppLocalizations.getTraditionName(p.tradition, lang)} | Month System: ${p.monthSystem.name.toUpperCase()}',
+                        style: TextStyle(fontSize: isElder ? 13.5 : 12, color: AppTheme.subtleText),
+                      ),
+                      Text(
+                        'Coordinates: ${p.location.coordinatesString} | TZ: +${p.location.timezoneHours}h',
+                        style: TextStyle(fontSize: isElder ? 13.5 : 12, color: AppTheme.subtleText),
+                      ),
+                    ],
                   ],
                 ),
-              );
-            }).toList(),
+              ),
+              const SizedBox(height: 16),
+
+              // 5 Limbs (Pancha-Anga)
+              _buildSectionTitle(AppLocalizations.tr('panchang_elements', lang), isElder),
+              _buildPanchangRow(
+                'Tithi (${AppLocalizations.tr("legend_ekadashi", lang) == "एकादशी" ? "तिथि" : "Tithi"})',
+                '${AppLocalizations.getPakshaName(p.paksha, lang)} ${AppLocalizations.getTithiName(p.tithiNumber, lang)}',
+                '${AppLocalizations.tr("ends_at", lang)}: ${_formatTime(p.tithiEndTime)} (${AppLocalizations.tr("next_label", lang)}: ${AppLocalizations.getTithiName((p.tithiNumber % 30) + 1, lang)})',
+                isElder,
+              ),
+              _buildPanchangRow(
+                '${AppLocalizations.tr("nakshatra_label", lang)}',
+                AppLocalizations.getNakshatraName(p.nakshatraName, lang),
+                '${AppLocalizations.tr("ends_at", lang)}: ${_formatTime(p.nakshatraEndTime)}',
+                isElder,
+              ),
+              _buildPanchangRow(
+                '${AppLocalizations.tr("yoga_label", lang)}',
+                AppLocalizations.getYogaName(p.yogaName, lang),
+                '${AppLocalizations.tr("ends_at", lang)}: ${_formatTime(p.yogaEndTime)}',
+                isElder,
+              ),
+              _buildPanchangRow(
+                '${AppLocalizations.tr("karana_label", lang)}',
+                AppLocalizations.getKaranaName(p.karanaName, lang),
+                '${AppLocalizations.tr("next_label", lang)}: ${AppLocalizations.getKaranaName(p.nextKaranaName, lang)}',
+                isElder,
+              ),
+              _buildPanchangRow(
+                '${AppLocalizations.tr("vara_label", lang)}',
+                AppLocalizations.getVaraName(p.localDate.weekday, lang),
+                '${AppLocalizations.getVaraName(p.localDate.weekday, lang)}',
+                isElder,
+              ),
+              const SizedBox(height: 16),
+
+              // Astronomical Timings
+              _buildSectionTitle(AppLocalizations.tr('astronomical_timings', lang), isElder),
+              _buildPanchangRow(
+                AppLocalizations.tr('astronomical_sunrise', lang),
+                _formatTime(p.astronomicalSunrise),
+                'Refraction & dip corrected (50\' depression)',
+                isElder,
+              ),
+              _buildPanchangRow(
+                AppLocalizations.tr('astronomical_sunset', lang),
+                _formatTime(p.astronomicalSunset),
+                'Center of Sun crosses apparent horizon',
+                isElder,
+              ),
+              _buildPanchangRow(
+                AppLocalizations.tr('moonrise', lang),
+                p.moonrise != null ? _formatTime(p.moonrise!) : '—',
+                'Topocentric parallax corrected',
+                isElder,
+              ),
+              _buildPanchangRow(
+                AppLocalizations.tr('moonset', lang),
+                p.moonset != null ? _formatTime(p.moonset!) : '—',
+                'Local horizon crossing',
+                isElder,
+              ),
+              _buildPanchangRow(
+                AppLocalizations.tr('solar_noon', lang),
+                _formatTime(p.solarNoon),
+                'Madhyahna / Meridian transit',
+                isElder,
+              ),
+              const SizedBox(height: 16),
+
+              // Auspicious & Inauspicious Periods
+              _buildSectionTitle(AppLocalizations.tr('auspicious_inauspicious', lang), isElder),
+              _buildPanchangRow(
+                '${AppLocalizations.tr("brahma_muhurat", lang)} 🧘',
+                '${_formatTime(p.brahmaMuhuratStart)} – ${_formatTime(p.brahmaMuhuratEnd)}',
+                '96 min to 48 min before sunrise',
+                isElder,
+              ),
+              _buildPanchangRow(
+                '${AppLocalizations.tr("abhijit_muhurat", lang)} 🟢',
+                '${_formatTime(p.abhijitMuhuratStart)} – ${_formatTime(p.abhijitMuhuratEnd)}',
+                'Midday auspicious window',
+                isElder,
+              ),
+              _buildPanchangRow(
+                '${AppLocalizations.tr("rahu_kaal", lang)} 🔴',
+                '${_formatTime(p.rahuKaalStart)} – ${_formatTime(p.rahuKaalEnd)}',
+                'Inauspicious daytime octant',
+                isElder,
+              ),
+              _buildPanchangRow(
+                AppLocalizations.tr('yamaganda', lang),
+                '${_formatTime(p.yamagandaStart)} – ${_formatTime(p.yamagandaEnd)}',
+                'Inauspicious daytime octant',
+                isElder,
+              ),
+              _buildPanchangRow(
+                AppLocalizations.tr('gulika', lang),
+                '${_formatTime(p.gulikaStart)} – ${_formatTime(p.gulikaEnd)}',
+                'Saturnian daytime octant',
+                isElder,
+              ),
+              const SizedBox(height: 16),
+
+              // Choghadiya Section
+              _buildSectionTitle(AppLocalizations.tr('day_choghadiya', lang), isElder),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: p.dayChoghadiya.map((c) {
+                  final color = c.isAuspicious ? AppTheme.suitableGreen : AppTheme.notSuitableRed;
+                  return Container(
+                    width: (MediaQuery.of(context).size.width.clamp(320, 880) - 48) / 2,
+                    padding: EdgeInsets.all(isElder ? 12 : 10),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: color.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          AppLocalizations.getChoghadiyaName(c.name, lang),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                            fontSize: isElder ? 16 : 14.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_formatTime(c.start)} – ${_formatTime(c.end)}',
+                          style: TextStyle(
+                            fontSize: isElder ? 13.5 : 12.0,
+                            color: AppTheme.deepText,
+                          ),
+                        ),
+                        Text(
+                          c.isAuspicious
+                              ? AppLocalizations.tr('auspicious', lang)
+                              : AppLocalizations.tr('inauspicious', lang),
+                          style: TextStyle(
+                            fontSize: isElder ? 12.5 : 11.0,
+                            color: color,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
-          const SizedBox(height: 24),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, [bool isElder = false]) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.deepMaroon),
+        style: TextStyle(
+          fontSize: isElder ? 18.5 : 16.0,
+          fontWeight: FontWeight.bold,
+          color: AppTheme.deepMaroon,
+        ),
       ),
     );
   }
 
-  Widget _buildPanchangRow(String title, String mainValue, String subValue) {
+  Widget _buildPanchangRow(String title, String mainValue, String subValue, [bool isElder = false]) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: isElder ? 12 : 10),
       decoration: BoxDecoration(
         color: AppTheme.cardBackground,
         borderRadius: BorderRadius.circular(12),
@@ -185,9 +313,23 @@ class _FullPanchangScreenState extends State<FullPanchangScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 13, color: AppTheme.subtleText, fontWeight: FontWeight.w500)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: isElder ? 14.5 : 13.0,
+                    color: AppTheme.subtleText,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(mainValue, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.deepText)),
+                Text(
+                  mainValue,
+                  style: TextStyle(
+                    fontSize: isElder ? 17.0 : 15.0,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.deepText,
+                  ),
+                ),
               ],
             ),
           ),
@@ -196,7 +338,7 @@ class _FullPanchangScreenState extends State<FullPanchangScreen> {
               child: Text(
                 subValue,
                 textAlign: TextAlign.end,
-                style: const TextStyle(fontSize: 11, color: AppTheme.subtleText),
+                style: TextStyle(fontSize: isElder ? 12.5 : 11.0, color: AppTheme.subtleText),
               ),
             ),
         ],

@@ -155,14 +155,7 @@ class PanchangService {
     }
 
     // 8. Lunar Month & Paksha
-    final double jd = AstronomyEngine.toJulianDay(sunriseUtc);
-    final double sunSidereal = AstronomyEngine.sunSiderealLongitude(jd);
-    // Solar Rashi (0: Mesha -> Chaitra, ..., 11: Meena -> Phalguna)
-    final int solarRashi = (sunSidereal / 30.0).floor() % 12;
-    final int lunarMonthIndex = solarRashi;
-    final String lunarMonthName =
-        PanchangConstants.lunarMonthNames[lunarMonthIndex];
-
+    final int amantaMonthIndex = AstronomyEngine.calculateAmantaMonthIndex(sunriseUtc);
     final Paksha paksha = (tithiNum <= 15) ? Paksha.shukla : Paksha.krishna;
     final MonthSystem monthSystem = monthSystemOverride ??
         ((regionalProfile == RegionalProfile.gujarat ||
@@ -174,9 +167,16 @@ class PanchangService {
             ? MonthSystem.amanta
             : MonthSystem.purnimanta);
 
+    // In Purnimanta system, the Krishna Paksha belongs to the upcoming lunar month
+    final int displayMonthIndex = (monthSystem == MonthSystem.purnimanta && paksha == Paksha.krishna)
+        ? (amantaMonthIndex + 1) % 12
+        : amantaMonthIndex;
+    final String lunarMonthName =
+        PanchangConstants.lunarMonthNames[displayMonthIndex];
+
     // 9. Festivals & Ekadashi
     final detected = FestivalsData.detectFestivals(
-      lunarMonthIndex: lunarMonthIndex,
+      lunarMonthIndex: amantaMonthIndex,
       tithiNumber: tithiNum,
       paksha: paksha,
       tradition: tradition,
@@ -186,7 +186,7 @@ class PanchangService {
     final bool isEkadashi = (tithiNum == 11 || tithiNum == 26);
     final String? ekadashiName = isEkadashi
         ? FestivalsData.getEkadashiName(
-            lunarMonthIndex: lunarMonthIndex, paksha: paksha)
+            lunarMonthIndex: amantaMonthIndex, paksha: paksha)
         : null;
 
     final panchangDay = PanchangDay(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/models/panchang_day.dart';
+import '../../l10n/app_localizations.dart';
+import '../../services/storage/local_storage_service.dart';
 
 class NowIndicatorCard extends StatelessWidget {
   final PanchangDay panchang;
@@ -14,6 +16,7 @@ class NowIndicatorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = LocalStorageService.appLanguage;
     final indicator = panchang.getNowIndicator(currentTime);
     if (indicator == null) return const SizedBox.shrink();
 
@@ -25,9 +28,26 @@ class NowIndicatorCard extends StatelessWidget {
     final Color borderColor =
         isGreen ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA);
 
+    // Localize the title dynamically
+    String localizedTitle = indicator.title;
+    if (panchang.isInsideRahuKaal(currentTime)) {
+      localizedTitle = AppLocalizations.tr('rahu_kaal_active', lang);
+    } else if (panchang.isInsideAbhijit(currentTime)) {
+      localizedTitle = AppLocalizations.tr('abhijit_active', lang);
+    } else {
+      for (final c in panchang.dayChoghadiya) {
+        if (currentTime.isAfter(c.start) && currentTime.isBefore(c.end)) {
+          localizedTitle = '${c.name} ${AppLocalizations.tr('choghadiya_active', lang)}';
+          break;
+        }
+      }
+    }
+
+    final bool isElder = LocalStorageService.elderMode;
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: isElder ? 14 : 12),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(12),
@@ -36,8 +56,8 @@ class NowIndicatorCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 12,
-            height: 12,
+            width: isElder ? 14 : 12,
+            height: isElder ? 14 : 12,
             decoration: BoxDecoration(
               color: badgeColor,
               shape: BoxShape.circle,
@@ -49,19 +69,19 @@ class NowIndicatorCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  indicator.title,
+                  localizedTitle,
                   style: TextStyle(
                     color: badgeColor,
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontSize: isElder ? 16.5 : 14.5,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   indicator.timing,
                   style: TextStyle(
-                    color: AppTheme.deepText.withOpacity(0.8),
-                    fontSize: 13,
+                    color: AppTheme.deepText.withOpacity(0.85),
+                    fontSize: isElder ? 15.0 : 13.0,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -69,17 +89,17 @@ class NowIndicatorCard extends StatelessWidget {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: isElder ? 10 : 8, vertical: isElder ? 5 : 4),
             decoration: BoxDecoration(
               color: badgeColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
-              'LIVE',
+              AppLocalizations.tr('live_badge', lang),
               style: TextStyle(
                 color: badgeColor,
                 fontWeight: FontWeight.bold,
-                fontSize: 11,
+                fontSize: isElder ? 13.0 : 11.0,
                 letterSpacing: 0.5,
               ),
             ),

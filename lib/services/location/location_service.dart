@@ -20,6 +20,7 @@ class LocationService {
   ];
 
   static LocationInfo get currentLocation => _currentLocation;
+  static set currentLocation(LocationInfo loc) => setCurrentLocation(loc);
   static LocationInfo? get eventLocation => _eventLocation;
   static List<LocationInfo> get savedLocations => List.unmodifiable(_savedLocations);
 

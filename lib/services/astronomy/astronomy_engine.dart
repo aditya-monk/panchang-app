@@ -500,4 +500,30 @@ class AstronomyEngine {
     final double k = (1.0 + math.cos(phi * degToRad)) / 2.0;
     return k * 100.0;
   }
+
+  /// Calculates the canonical Amanta Lunar Month index (0: Chaitra .. 11: Phalguna).
+  /// In Indian astronomy (Surya Siddhanta), a lunar month is defined from one New Moon (conjunction)
+  /// to the next, and is named by the Solar Rashi where the Sun resides at the moment of that New Moon:
+  /// (Solar Rashi at New Moon + 1) % 12 (0: Mesha -> Vaishakha, ..., 11: Meena -> Chaitra).
+  static int calculateAmantaMonthIndex(DateTime utcTime) {
+    final double jd = toJulianDay(utcTime);
+    final double sunLon = sunGeometricLongitude(jd);
+    final double moonLon = moonGeometricLongitude(jd);
+
+    double diff = normalizeDegrees(moonLon - sunLon);
+    double daysSinceNewMoon = (diff / 360.0) * 29.530588;
+    double jdNewMoon = jd - daysSinceNewMoon;
+
+    for (int i = 0; i < 3; i++) {
+      double s = sunGeometricLongitude(jdNewMoon);
+      double m = moonGeometricLongitude(jdNewMoon);
+      double d = normalizeDegrees(m - s);
+      if (d > 180.0) d -= 360.0;
+      jdNewMoon -= d / (360.0 / 29.530588);
+    }
+
+    final double sunSidAtNewMoon = sunSiderealLongitude(jdNewMoon);
+    final int solarRashiAtNewMoon = (sunSidAtNewMoon / 30.0).floor() % 12;
+    return (solarRashiAtNewMoon + 1) % 12;
+  }
 }
